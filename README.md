@@ -7,6 +7,8 @@ As I mentioned earlier in hlox project, I am building a compiler into stack-base
 ## VM Differences
 For the sake of simplicity my VM is a bit different. They are both stack machines, but mine uses enums to store constants(just numbers, at the moment of writing) instead of parrallel arrays, I expect more differences to come.
 
+Once it's done I'm going to measure performance against clox to see how much I could gain if my VM used more primitive datatypes.
+
 ## Parser differences
 Parser \=\= compiler in this case. My parser also uses pratt-parsing technique(even though the book later states that parsing is not a big deal and I think I should've chosen something simpler, but it's always nice to learn a new technique). Main difference is that I try to keep mutations as local as possible. So I don't write to a global place in memory and instead my compilation process looks more functional:
 
