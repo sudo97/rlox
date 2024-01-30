@@ -1,6 +1,6 @@
 use crate::common::{Chunk, Disassembler, OpCode, Value};
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum InterpretMode {
     Debug,
     Release,

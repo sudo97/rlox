@@ -10,7 +10,7 @@ mod parse;
 mod tokens;
 mod vm;
 
-fn repl() {
+fn repl(mode: vm::InterpretMode) {
     let mut vm = VM::new();
     loop {
         print!("> ");
@@ -20,7 +20,7 @@ fn repl() {
             Ok(n) => {
                 if n > 0 {
                     if let Some(chunk) = Source(input).compile("repl".into()) {
-                        vm.interpret(chunk, vm::InterpretMode::Debug);
+                        vm.interpret(chunk, mode);
                     }
                 } else {
                     println!("Bye!");
@@ -35,12 +35,12 @@ fn repl() {
     }
 }
 
-fn run_file(path: &str) {
+fn run_file(path: &str, mode: vm::InterpretMode) {
     let source =
         Source(std::fs::read_to_string(path).expect("Something went wrong reading the file"));
     let mut vm = VM::new();
     if let Some(chunk) = source.compile(path.into()) {
-        match vm.interpret(chunk, vm::InterpretMode::Debug) {
+        match vm.interpret(chunk, mode) {
             vm::InterpretResult::Ok => {}
             vm::InterpretResult::CompileError => {
                 std::process::exit(65);
@@ -55,16 +55,26 @@ fn run_file(path: &str) {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
 
-    for arg in &args {
-        println!("{}", arg);
+    let mut file_ref: Option<String> = None;
+    let mut interpret_mode = vm::InterpretMode::Release;
+
+    for arg in &args[1..] {
+        match arg.as_str() {
+            "-d" | "--debug" => interpret_mode = vm::InterpretMode::Debug,
+            _ => {
+                if file_ref.is_none() {
+                    file_ref = Some(arg.clone());
+                } else {
+                    eprintln!("Unexpected argument: {}", arg);
+                    std::process::exit(1);
+                }
+            }
+        }
     }
 
-    if args.len() == 1 {
-        repl();
-    } else if args.len() == 2 {
-        run_file(&args[1]);
+    if let Some(path) = file_ref {
+        run_file(path.as_str(), interpret_mode);
     } else {
-        eprintln!("Usage: rlox [path]");
-        std::process::exit(64);
+        repl(interpret_mode);
     }
 }
