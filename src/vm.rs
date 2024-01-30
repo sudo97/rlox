@@ -88,6 +88,5 @@ impl VM {
 
 pub enum InterpretResult {
     Ok,
-    CompileError,
     RuntimeError,
 }

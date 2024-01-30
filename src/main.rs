@@ -42,9 +42,6 @@ fn run_file(path: &str, mode: vm::InterpretMode) {
     if let Some(chunk) = source.compile(path.into()) {
         match vm.interpret(chunk, mode) {
             vm::InterpretResult::Ok => {}
-            vm::InterpretResult::CompileError => {
-                std::process::exit(65);
-            }
             vm::InterpretResult::RuntimeError => {
                 std::process::exit(70);
             }
