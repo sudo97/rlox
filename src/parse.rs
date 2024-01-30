@@ -59,6 +59,11 @@ fn prefix_parselets(tok: Token) -> Parselet {
             let expr = vec![(OpCode::Constant(Value::Nil), tok.line)];
             Some(expr)
         }),
+        TokenType::Bang => Box::new(move |parser| {
+            let mut expr = parser.parse(tok.precedence())?;
+            expr.push((OpCode::Not, tok.line));
+            Some(expr)
+        }),
         TokenType::Plus => Box::new(move |parser| {
             let expr = parser.parse(tok.precedence())?;
             Some(expr)

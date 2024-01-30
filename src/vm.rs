@@ -20,10 +20,13 @@ impl Disassembler for Vec<Value> {
 }
 
 macro_rules! binary_op {
-    ($vm:ident, $op:tt) => {
+    ($vm:ident, $op:tt, $line:expr) => {
         match ($vm.stack.pop(), $vm.stack.pop()) {
             (Some(Value::Number(a)), Some(Value::Number(b))) => $vm.stack.push(Value::Number(b $op a)),
-            _ => return InterpretResult::RuntimeError,
+            _ => {
+                eprintln!("Error at line {}, Operands must be numbers", $line);
+                return InterpretResult::RuntimeError
+            },
         }
     };
 }
@@ -39,7 +42,7 @@ impl VM {
             chunk.disassemble();
         }
         loop {
-            let (instruction, _) = &chunk.code[ip];
+            let (instruction, line) = &chunk.code[ip];
             if mode == InterpretMode::Debug {
                 instruction.disassemble();
             }
@@ -56,17 +59,24 @@ impl VM {
                     _ => return InterpretResult::RuntimeError,
                 },
                 OpCode::Add => {
-                    binary_op!(self, +);
+                    binary_op!(self, +, line);
                 }
                 OpCode::Subtract => {
-                    binary_op!(self, -);
+                    binary_op!(self, -, line);
                 }
                 OpCode::Multiply => {
-                    binary_op!(self, *);
+                    binary_op!(self, *, line);
                 }
                 OpCode::Divide => {
-                    binary_op!(self, /);
+                    binary_op!(self, /, line);
                 }
+                OpCode::Not => match self.stack.pop() {
+                    Some(Value::Boolean(value)) => self.stack.push(Value::Boolean(!value)),
+                    _ => {
+                        eprintln!("Error at line {}. Operand must be a boolean", line);
+                        return InterpretResult::RuntimeError;
+                    }
+                },
             }
             if mode == InterpretMode::Debug {
                 self.stack.disassemble();

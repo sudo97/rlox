@@ -20,6 +20,7 @@ impl fmt::Display for Value {
 pub enum OpCode {
     Return,
     Constant(Value),
+    Not,
     Negate,
     Add,
     Subtract,
@@ -55,13 +56,14 @@ impl Disassembler for Chunk {
 impl Disassembler for OpCode {
     fn disassemble(&self) {
         match self {
-            OpCode::Return => println!("OpReturn"),
-            OpCode::Constant(value) => println!("OpConstant {}", value),
-            OpCode::Negate => println!("OpNegate"),
-            OpCode::Add => println!("OpAdd"),
-            OpCode::Subtract => println!("OpSubtract"),
-            OpCode::Multiply => println!("OpMultiply"),
-            OpCode::Divide => println!("OpDivide"),
+            OpCode::Return => println!("Return"),
+            OpCode::Constant(value) => println!("Constant {}", value),
+            OpCode::Negate => println!("Negate"),
+            OpCode::Add => println!("Add"),
+            OpCode::Subtract => println!("Subtract"),
+            OpCode::Multiply => println!("Multiply"),
+            OpCode::Divide => println!("Divide"),
+            OpCode::Not => println!("Not"),
         }
     }
 }
