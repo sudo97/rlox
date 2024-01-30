@@ -1,11 +1,30 @@
+use std::fmt;
+
+#[derive(Debug, Copy, Clone)]
+pub enum Value {
+    Number(f64),
+    Boolean(bool),
+    Nil,
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Value::Number(n) => write!(f, "Number({})", n),
+            Value::Boolean(b) => write!(f, "Boolean({})", b),
+            Value::Nil => write!(f, "Nil"),
+        }
+    }
+}
+
 pub enum OpCode {
-    OpReturn,
-    OpConstant(f64),
-    OpNegate,
-    OpAdd,
-    OpSubtract,
-    OpMultiply,
-    OpDivide,
+    Return,
+    Constant(Value),
+    Negate,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
 }
 
 pub struct Chunk {
@@ -36,13 +55,13 @@ impl Disassembler for Chunk {
 impl Disassembler for OpCode {
     fn disassemble(&self) {
         match self {
-            OpCode::OpReturn => println!("OpReturn"),
-            OpCode::OpConstant(value) => println!("OpConstant {}", value),
-            OpCode::OpNegate => println!("OpNegate"),
-            OpCode::OpAdd => println!("OpAdd"),
-            OpCode::OpSubtract => println!("OpSubtract"),
-            OpCode::OpMultiply => println!("OpMultiply"),
-            OpCode::OpDivide => println!("OpDivide"),
+            OpCode::Return => println!("OpReturn"),
+            OpCode::Constant(value) => println!("OpConstant {}", value),
+            OpCode::Negate => println!("OpNegate"),
+            OpCode::Add => println!("OpAdd"),
+            OpCode::Subtract => println!("OpSubtract"),
+            OpCode::Multiply => println!("OpMultiply"),
+            OpCode::Divide => println!("OpDivide"),
         }
     }
 }

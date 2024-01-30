@@ -12,9 +12,9 @@ impl Source {
         let tokenizer = Tokenizer::new(&self);
         let bytecode = Parser::new(tokenizer.peekable()).parse(0)?;
         for (instruction, line) in bytecode {
-            chunk.write(instruction, line.into());
+            chunk.write(instruction, line);
         }
-        chunk.write(OpCode::OpReturn, 0);
+        chunk.write(OpCode::Return, 0);
         Some(chunk)
     }
 }

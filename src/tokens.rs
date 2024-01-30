@@ -162,11 +162,11 @@ impl<'a> Iterator for Tokenizer<'a> {
                 }
                 TokenType::Str(string)
             }
-            _ if next_char.is_digit(10) => {
+            _ if next_char.is_ascii_digit() => {
                 let mut number = String::new();
                 number.push(next_char);
                 while let Some(&ch) = self.chars.peek() {
-                    if ch.is_digit(10) {
+                    if ch.is_ascii_digit() {
                         number.push(ch);
                         self.chars.next();
                     } else {

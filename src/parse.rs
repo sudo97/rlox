@@ -1,5 +1,5 @@
 use crate::{
-    common::OpCode,
+    common::{OpCode, Value},
     tokens::{Token, TokenType, Tokenizer},
 };
 use std::iter::Peekable;
@@ -44,7 +44,7 @@ impl<'a> Parser<'a> {
 fn prefix_parselets(tok: Token) -> Parselet {
     match tok.token_type {
         TokenType::Number(n) => Box::new(move |_| {
-            let expr = vec![(OpCode::OpConstant(n), tok.line)];
+            let expr = vec![(OpCode::Constant(Value::Number(n)), tok.line)];
             Some(expr)
         }),
         TokenType::Plus => Box::new(move |parser| {
@@ -53,7 +53,7 @@ fn prefix_parselets(tok: Token) -> Parselet {
         }),
         TokenType::Minus => Box::new(move |parser| {
             let mut expr = parser.parse(tok.precedence())?;
-            expr.push((OpCode::OpNegate, tok.line));
+            expr.push((OpCode::Negate, tok.line));
             Some(expr)
         }),
         TokenType::LeftParen => Box::new(move |parser| {
@@ -74,22 +74,22 @@ fn infix_parselets(tok: Token) -> Parselet {
     match tok.token_type {
         TokenType::Plus => Box::new(move |parser| {
             let mut expr = parser.parse(tok.precedence())?;
-            expr.push((OpCode::OpAdd, tok.line));
+            expr.push((OpCode::Add, tok.line));
             Some(expr)
         }),
         TokenType::Minus => Box::new(move |parser| {
             let mut expr = parser.parse(tok.precedence())?;
-            expr.push((OpCode::OpSubtract, tok.line));
+            expr.push((OpCode::Subtract, tok.line));
             Some(expr)
         }),
         TokenType::Star => Box::new(move |parser| {
             let mut expr = parser.parse(tok.precedence())?;
-            expr.push((OpCode::OpMultiply, tok.line));
+            expr.push((OpCode::Multiply, tok.line));
             Some(expr)
         }),
         TokenType::Slash => Box::new(move |parser| {
             let mut expr = parser.parse(tok.precedence())?;
-            expr.push((OpCode::OpDivide, tok.line));
+            expr.push((OpCode::Divide, tok.line));
             Some(expr)
         }),
         _ => Box::new(move |_| {

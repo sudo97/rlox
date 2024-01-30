@@ -1,4 +1,4 @@
-use crate::common::{Chunk, Disassembler, OpCode};
+use crate::common::{Chunk, Disassembler, OpCode, Value};
 
 #[derive(PartialEq, Eq)]
 pub enum InterpretMode {
@@ -7,10 +7,10 @@ pub enum InterpretMode {
 }
 
 pub struct VM {
-    pub stack: Vec<f64>,
+    pub stack: Vec<Value>,
 }
 
-impl Disassembler for Vec<f64> {
+impl Disassembler for Vec<Value> {
     fn disassemble(&self) {
         for slot in self.iter() {
             print!("[ {} ]", slot);
@@ -22,7 +22,7 @@ impl Disassembler for Vec<f64> {
 macro_rules! binary_op {
     ($vm:ident, $op:tt) => {
         match ($vm.stack.pop(), $vm.stack.pop()) {
-            (Some(b), Some(a)) => $vm.stack.push(b $op a),
+            (Some(Value::Number(a)), Some(Value::Number(b))) => $vm.stack.push(Value::Number(b $op a)),
             _ => return InterpretResult::RuntimeError,
         }
     };
@@ -44,27 +44,27 @@ impl VM {
                 instruction.disassemble();
             }
             match instruction {
-                OpCode::OpReturn => {
+                OpCode::Return => {
                     self.stack.pop();
                     return InterpretResult::Ok;
                 }
-                OpCode::OpConstant(value) => {
+                OpCode::Constant(value) => {
                     self.stack.push(*value);
                 }
-                OpCode::OpNegate => match self.stack.pop() {
-                    Some(value) => self.stack.push(-value),
-                    None => return InterpretResult::RuntimeError,
+                OpCode::Negate => match self.stack.pop() {
+                    Some(Value::Number(value)) => self.stack.push(Value::Number(-value)),
+                    _ => return InterpretResult::RuntimeError,
                 },
-                OpCode::OpAdd => {
+                OpCode::Add => {
                     binary_op!(self, +);
                 }
-                OpCode::OpSubtract => {
+                OpCode::Subtract => {
                     binary_op!(self, -);
                 }
-                OpCode::OpMultiply => {
+                OpCode::Multiply => {
                     binary_op!(self, *);
                 }
-                OpCode::OpDivide => {
+                OpCode::Divide => {
                     binary_op!(self, /);
                 }
             }
