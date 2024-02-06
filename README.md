@@ -17,3 +17,42 @@ Parser \=\= compiler in this case. My parser also uses pratt-parsing technique(e
 ```
 
 Other difference I decided to have for simplicity is that I don't use hash tables to obtain a parselet. I just use a simple function from token to a parselet. With match expressions it's almost as readable as hash-table, if not more so.
+
+*UPD at 06-02-2024*
+
+Since I don't use a hash-table, I don't need a parselet either. It would be closer to the book if I had `type Parselet = fn(fn(&mut Parser) -> Option<Expr>)`, and not use closures, but since I didn't go that path and used closures without hash-table, I started to think of other ways to simplify this. Since all the closures are defined in-line and they are also immideately called in the main parser's loop, I felt I don't need Closures at all, so what I did was just this:
+
+```diff
+-fn prefix_parselets(tok: Token) -> Parselet {
++fn prefix_parselets(tok: Token, parser: &mut Parser) -> Option<Expr> {
+     match tok.token_type {
+-        TokenType::Number(n) => Box::new(move |_| {
++        TokenType::Number(n) => {
+             let expr = vec![(OpCode::Constant(Value::Number(n)), tok.line)];
+             Some(expr)
+-        }),
+-        TokenType::True => Box::new(move |_| {
++        }
++        TokenType::True => {
+```
+
+And so on. Parser goes to a parameter of prefix_parselets, and I just unwrap the box and get rid of the closure.
+
+and then in the main loop:
+```diff
+-        let prefix_parselet = prefix_parselets(token);
+-        let mut left = prefix_parselet(self)?;
++        let mut left = prefix_parselets(token, self)?;
+         while precedence < self.peek_precedence() {
+             let token = self.consume().or_else(|| {
+                 println!("Unexpected end of input");
+                 None
+             })?;
+-            let infix_parselet = infix_parselets(token);
+-            let mut right = infix_parselet(self)?;
++            let mut right = infix_parselets(token, self)?;
+```
+
+Istead of obtaining a parselet, then calling it, I just call the function with two args.
+
+If I ever feel like prefix_parselets or infix_parselets are a bit too long, I can always define as many static functions as I want and call them within the branches without worrying about fitting every parselet into one type.
