@@ -26,96 +26,92 @@ impl<'a> Parser<'a> {
             println!("Unexpected end of input"); // TODO: rewrite with Result to avoid this println-s
             None
         })?;
-        let prefix_parselet = prefix_parselets(token);
-        let mut left = prefix_parselet(self)?;
+        let mut left = prefix_parselets(token, self)?;
         while precedence < self.peek_precedence() {
             let token = self.consume().or_else(|| {
                 println!("Unexpected end of input");
                 None
             })?;
-            let infix_parselet = infix_parselets(token);
-            let mut right = infix_parselet(self)?;
+            let mut right = infix_parselets(token, self)?;
             left.append(&mut right);
         }
         Some(left)
     }
 }
 
-fn prefix_parselets(tok: Token) -> Parselet {
+fn prefix_parselets(tok: Token, parser: &mut Parser) -> Option<Expr> {
     match tok.token_type {
-        TokenType::Number(n) => Box::new(move |_| {
+        TokenType::Number(n) => {
             let expr = vec![(OpCode::Constant(Value::Number(n)), tok.line)];
             Some(expr)
-        }),
-        TokenType::True => Box::new(move |_| {
+        }
+        TokenType::True => {
             let expr = vec![(OpCode::Constant(Value::Boolean(true)), tok.line)];
             Some(expr)
-        }),
-        TokenType::False => Box::new(move |_| {
+        }
+        TokenType::False => {
             let expr = vec![(OpCode::Constant(Value::Boolean(false)), tok.line)];
             Some(expr)
-        }),
-        TokenType::Nil => Box::new(move |_| {
+        }
+        TokenType::Nil => {
             let expr = vec![(OpCode::Constant(Value::Nil), tok.line)];
             Some(expr)
-        }),
-        TokenType::Bang => Box::new(move |parser| {
+        }
+        TokenType::Bang => {
             let mut expr = parser.parse(tok.precedence())?;
             expr.push((OpCode::Not, tok.line));
             Some(expr)
-        }),
-        TokenType::Plus => Box::new(move |parser| {
+        }
+        TokenType::Plus => {
             let expr = parser.parse(tok.precedence())?;
             Some(expr)
-        }),
-        TokenType::Minus => Box::new(move |parser| {
+        }
+        TokenType::Minus => {
             let mut expr = parser.parse(tok.precedence())?;
             expr.push((OpCode::Negate, tok.line));
             Some(expr)
-        }),
-        TokenType::LeftParen => Box::new(move |parser| {
+        }
+        TokenType::LeftParen => {
             let expr = parser.parse(tok.precedence())?;
             match parser.consume()?.token_type {
                 TokenType::RightParen => Some(expr),
                 _ => None,
             }
-        }),
-        _ => Box::new(move |_| {
+        }
+        _ => {
             println!("Unexpected token: {:?}", tok);
             None
-        }),
+        }
     }
 }
 
-fn infix_parselets(tok: Token) -> Parselet {
+fn infix_parselets(tok: Token, parser: &mut Parser) -> Option<Expr> {
     match tok.token_type {
-        TokenType::Plus => Box::new(move |parser| {
+        TokenType::Plus => {
             let mut expr = parser.parse(tok.precedence())?;
             expr.push((OpCode::Add, tok.line));
             Some(expr)
-        }),
-        TokenType::Minus => Box::new(move |parser| {
+        }
+        TokenType::Minus => {
             let mut expr = parser.parse(tok.precedence())?;
             expr.push((OpCode::Subtract, tok.line));
             Some(expr)
-        }),
-        TokenType::Star => Box::new(move |parser| {
+        }
+        TokenType::Star => {
             let mut expr = parser.parse(tok.precedence())?;
             expr.push((OpCode::Multiply, tok.line));
             Some(expr)
-        }),
-        TokenType::Slash => Box::new(move |parser| {
+        }
+        TokenType::Slash => {
             let mut expr = parser.parse(tok.precedence())?;
             expr.push((OpCode::Divide, tok.line));
             Some(expr)
-        }),
-        _ => Box::new(move |_| {
+        }
+        _ => {
             println!("Unexpected token: {:?}", tok);
             None
-        }),
+        }
     }
 }
 
 type Expr = Vec<(OpCode, i32)>;
-
-type Parselet = Box<dyn Fn(&mut Parser) -> Option<Expr>>;
