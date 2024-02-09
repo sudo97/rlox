@@ -19,7 +19,7 @@ fn repl(mode: vm::InterpretMode) {
         match std::io::stdin().read_line(&mut input) {
             Ok(n) => {
                 if n > 0 {
-                    if let Some(chunk) = Source(input).compile("repl".into()) {
+                    if let Some(chunk) = Source(input).compile("repl") {
                         vm.interpret(chunk, mode);
                     }
                 } else {
@@ -39,7 +39,7 @@ fn run_file(path: &str, mode: vm::InterpretMode) {
     let source =
         Source(std::fs::read_to_string(path).expect("Something went wrong reading the file"));
     let mut vm = VM::new();
-    if let Some(chunk) = source.compile(path.into()) {
+    if let Some(chunk) = source.compile(path) {
         match vm.interpret(chunk, mode) {
             vm::InterpretResult::Ok => {}
             vm::InterpretResult::RuntimeError => {
@@ -52,7 +52,7 @@ fn run_file(path: &str, mode: vm::InterpretMode) {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
 
-    let mut file_ref: Option<String> = None;
+    let mut file_ref: Option<&String> = None;
     let mut interpret_mode = vm::InterpretMode::Release;
 
     for arg in &args[1..] {
@@ -60,7 +60,7 @@ fn main() {
             "-d" | "--debug" => interpret_mode = vm::InterpretMode::Debug,
             _ => {
                 if file_ref.is_none() {
-                    file_ref = Some(arg.clone());
+                    file_ref = Some(arg);
                 } else {
                     eprintln!("Unexpected argument: {}", arg);
                     std::process::exit(1);

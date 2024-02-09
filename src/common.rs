@@ -28,8 +28,8 @@ pub enum OpCode {
     Divide,
 }
 
-pub struct Chunk {
-    name: String,
+pub struct Chunk<'a> {
+    name: &'a str,
     pub code: Vec<(OpCode, i32)>,
 }
 
@@ -37,17 +37,17 @@ pub trait Disassembler {
     fn disassemble(&self);
 }
 
-impl Chunk {
+impl<'a> Chunk<'a> {
     pub fn write(&mut self, byte: OpCode, line: i32) {
         self.code.push((byte, line));
     }
 
-    pub fn new(name: String) -> Self {
+    pub fn new(name: &'a str) -> Self {
         Chunk { name, code: vec![] }
     }
 }
 
-impl Disassembler for Chunk {
+impl Disassembler for Chunk<'_> {
     fn disassemble(&self) {
         println!("=== {} ===", self.name);
     }

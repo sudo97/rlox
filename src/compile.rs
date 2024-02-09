@@ -7,7 +7,7 @@ use crate::{
 pub struct Source(pub String);
 
 impl Source {
-    pub fn compile(self, file_name: String) -> Option<Chunk> {
+    pub fn compile(self, file_name: &str) -> Option<Chunk> {
         let mut chunk = Chunk::new(file_name);
         let tokenizer = Tokenizer::new(&self);
         let bytecode = Parser::new(tokenizer.peekable()).parse(0)?;
