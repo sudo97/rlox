@@ -71,7 +71,9 @@ impl Token {
             TokenType::Nil | TokenType::True | TokenType::False => 2,
             TokenType::Identifier(_) => 2,
             TokenType::LeftParen | TokenType::RightParen => 1, // Parentheses to control precedence explicitly.
-            _ => 0,
+            _ => {
+                todo!("Handle the rest of the token types in Token::precedence()")
+            }
         }
     }
 }
@@ -622,18 +624,5 @@ mod token_precedence_tests {
             line: 0,
         };
         assert!(identifier_token.precedence() > left_paren_token.precedence());
-    }
-
-    #[test]
-    fn left_paren_has_higher_precedence_than_error() {
-        let left_paren_token = Token {
-            token_type: TokenType::LeftParen,
-            line: 0,
-        };
-        let error_token = Token {
-            token_type: TokenType::Error,
-            line: 0,
-        };
-        assert!(left_paren_token.precedence() > error_token.precedence());
     }
 }
