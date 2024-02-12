@@ -59,11 +59,18 @@ pub struct Token {
 impl Token {
     pub fn precedence(&self) -> i32 {
         match self.token_type {
-            TokenType::Plus | TokenType::Minus => 3,
-            TokenType::Star | TokenType::Slash => 4,
-            TokenType::LeftParen | TokenType::RightParen => 2,
-            TokenType::Number(_) => 1,
-
+            TokenType::Bang => 7,
+            TokenType::Star | TokenType::Slash => 6,
+            TokenType::Plus | TokenType::Minus => 5,
+            TokenType::Greater
+            | TokenType::Less
+            | TokenType::GreaterEqual
+            | TokenType::LessEqual => 4,
+            TokenType::EqualEqual | TokenType::BangEqual => 3,
+            TokenType::Number(_) => 2, // Assuming you want literals to have a precedence.
+            TokenType::Nil | TokenType::True | TokenType::False => 2,
+            TokenType::Identifier(_) => 2,
+            TokenType::LeftParen | TokenType::RightParen => 1, // Parentheses to control precedence explicitly.
             _ => 0,
         }
     }
@@ -178,12 +185,14 @@ impl<'a> Iterator for Tokenizer<'a> {
             _ if next_char.is_alphabetic() => {
                 let mut identifier = String::new();
                 identifier.push(next_char);
-                let rest = self
-                    .chars
-                    .by_ref()
-                    .take_while(|ch| ch.is_alphanumeric())
-                    .collect::<String>();
-                identifier.push_str(&rest);
+                while let Some(&ch) = self.chars.peek() {
+                    if ch.is_alphanumeric() {
+                        identifier.push(ch);
+                        self.chars.next();
+                    } else {
+                        break;
+                    }
+                }
                 match identifier.as_str() {
                     "and" => TokenType::And,
                     "class" => TokenType::Class,

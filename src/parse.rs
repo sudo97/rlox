@@ -26,15 +26,23 @@ impl<'a> Parser<'a> {
             println!("Unexpected end of input"); // TODO: rewrite with Result to avoid this println-s
             None
         })?;
+        // println!("{}, Parsing {:?}", precedence, token);
         let mut left = prefix_parselets(token, self)?;
+        // println!("{}, Parsed left {:?}", precedence, left);
         while precedence < self.peek_precedence() {
             let token = self.consume().or_else(|| {
                 println!("Unexpected end of input");
                 None
             })?;
             let mut right = infix_parselets(token, self)?;
+            // println!("{}, Parsed right {:?}", precedence, right);
             left.append(&mut right);
+            // println!(
+            //     "{}, Parsed left after appending right {:?}",
+            //     precedence, left
+            // );
         }
+        // println!("{}, Returning {:?}", precedence, left);
         Some(left)
     }
 }
@@ -105,6 +113,39 @@ fn infix_parselets(tok: Token, parser: &mut Parser) -> Option<Expr> {
         TokenType::Slash => {
             let mut expr = parser.parse(tok.precedence())?;
             expr.push((OpCode::Divide, tok.line));
+            Some(expr)
+        }
+        TokenType::Greater => {
+            let mut expr = parser.parse(tok.precedence())?;
+            expr.push((OpCode::Greater, tok.line));
+            Some(expr)
+        }
+        TokenType::Less => {
+            let mut expr = parser.parse(tok.precedence())?;
+            expr.push((OpCode::Less, tok.line));
+            Some(expr)
+        }
+        TokenType::EqualEqual => {
+            let mut expr = parser.parse(tok.precedence())?;
+            expr.push((OpCode::Equal, tok.line));
+            Some(expr)
+        }
+        TokenType::BangEqual => {
+            let mut expr = parser.parse(tok.precedence())?;
+            expr.push((OpCode::Equal, tok.line));
+            expr.push((OpCode::Not, tok.line));
+            Some(expr)
+        }
+        TokenType::GreaterEqual => {
+            let mut expr = parser.parse(tok.precedence())?;
+            expr.push((OpCode::Less, tok.line));
+            expr.push((OpCode::Not, tok.line));
+            Some(expr)
+        }
+        TokenType::LessEqual => {
+            let mut expr = parser.parse(tok.precedence())?;
+            expr.push((OpCode::Greater, tok.line));
+            expr.push((OpCode::Not, tok.line));
             Some(expr)
         }
         _ => {

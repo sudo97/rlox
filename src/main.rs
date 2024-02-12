@@ -39,12 +39,14 @@ fn run_file(path: &str, mode: vm::InterpretMode) {
     let source =
         Source(std::fs::read_to_string(path).expect("Something went wrong reading the file"));
     let mut vm = VM::new();
-    if let Some(chunk) = source.compile(path) {
-        match vm.interpret(chunk, mode) {
-            vm::InterpretResult::Ok => {}
-            vm::InterpretResult::RuntimeError => {
+    match source.compile(path) {
+        Some(chunk) => {
+            if let vm::InterpretResult::RuntimeError = vm.interpret(chunk, mode) {
                 std::process::exit(70);
             }
+        }
+        None => {
+            println!("Failed to compile");
         }
     }
 }

@@ -19,14 +19,31 @@ impl Disassembler for Vec<Value> {
     }
 }
 
+macro_rules! val_constr {
+    ($a: expr, $b: expr, <) => {
+        Value::Boolean($a < $b)
+    };
+    ($a: expr, $b: expr, >) => {
+        Value::Boolean($a > $b)
+    };
+    ($a: expr, $b: expr, ==) => {
+        Value::Boolean($a == $b)
+    };
+    ($a: expr, $b: expr, $op:tt) => {
+        Value::Number($a $op $b)
+    };
+}
+
 macro_rules! binary_op {
     ($vm:ident, $op:tt, $line:expr) => {
         match ($vm.stack.pop(), $vm.stack.pop()) {
-            (Some(Value::Number(a)), Some(Value::Number(b))) => $vm.stack.push(Value::Number(b $op a)),
+            (Some(Value::Number(a)), Some(Value::Number(b))) => {
+                $vm.stack.push(val_constr!(b, a, $op))
+            }
             _ => {
                 eprintln!("Error at line {}, Operands must be numbers", $line);
-                return InterpretResult::RuntimeError
-            },
+                return InterpretResult::RuntimeError;
+            }
         }
     };
 }
@@ -46,37 +63,59 @@ impl VM {
             if mode == InterpretMode::Debug {
                 instruction.disassemble();
             }
+            use OpCode::*;
             match instruction {
-                OpCode::Return => {
+                Return => {
                     self.stack.pop();
                     return InterpretResult::Ok;
                 }
-                OpCode::Constant(value) => {
+                Constant(value) => {
                     self.stack.push(*value);
                 }
-                OpCode::Negate => match self.stack.pop() {
+                Negate => match self.stack.pop() {
                     Some(Value::Number(value)) => self.stack.push(Value::Number(-value)),
                     _ => return InterpretResult::RuntimeError,
                 },
-                OpCode::Add => {
+                Add => {
                     binary_op!(self, +, line);
                 }
-                OpCode::Subtract => {
+                Subtract => {
                     binary_op!(self, -, line);
                 }
-                OpCode::Multiply => {
+                Multiply => {
                     binary_op!(self, *, line);
                 }
-                OpCode::Divide => {
+                Divide => {
                     binary_op!(self, /, line);
                 }
-                OpCode::Not => match self.stack.pop() {
+                Not => match self.stack.pop() {
+                    Some(Value::Nil) => self.stack.push(Value::Boolean(true)),
+                    Some(Value::Number(x)) => self.stack.push(Value::Boolean(x != 0.0)),
                     Some(Value::Boolean(value)) => self.stack.push(Value::Boolean(!value)),
                     _ => {
                         eprintln!("Error at line {}. Operand must be a boolean", line);
                         return InterpretResult::RuntimeError;
                     }
                 },
+                Equal => match (self.stack.pop(), self.stack.pop()) {
+                    (Some(Value::Number(a)), Some(Value::Number(b))) => {
+                        self.stack.push(Value::Boolean(a == b))
+                    }
+                    (Some(Value::Boolean(a)), Some(Value::Boolean(b))) => {
+                        self.stack.push(Value::Boolean(a == b))
+                    }
+                    (Some(Value::Nil), Some(Value::Nil)) => self.stack.push(Value::Boolean(true)),
+                    _ => {
+                        eprintln!("Error at line {}, Operands must be of the same type", line);
+                        return InterpretResult::RuntimeError;
+                    }
+                },
+                Greater => {
+                    binary_op!(self, >, line);
+                }
+                Less => {
+                    binary_op!(self, <, line);
+                }
             }
             if mode == InterpretMode::Debug {
                 self.stack.disassemble();

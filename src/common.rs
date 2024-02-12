@@ -17,6 +17,7 @@ impl fmt::Display for Value {
     }
 }
 
+#[derive(Debug)]
 pub enum OpCode {
     Return,
     Constant(Value),
@@ -26,6 +27,9 @@ pub enum OpCode {
     Subtract,
     Multiply,
     Divide,
+    Equal,
+    Greater,
+    Less,
 }
 
 pub struct Chunk<'a> {
@@ -64,6 +68,9 @@ impl Disassembler for OpCode {
             OpCode::Multiply => println!("Multiply"),
             OpCode::Divide => println!("Divide"),
             OpCode::Not => println!("Not"),
+            OpCode::Equal => println!("Equal"),
+            OpCode::Greater => println!("Greater"),
+            OpCode::Less => println!("Less"),
         }
     }
 }
