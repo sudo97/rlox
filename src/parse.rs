@@ -156,3 +156,6 @@ fn infix_parselets(tok: Token, parser: &mut Parser) -> Option<Expr> {
 }
 
 type Expr = Vec<(OpCode, i32)>;
+
+#[cfg(test)]
+mod tests {}
