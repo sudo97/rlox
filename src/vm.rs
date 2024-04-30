@@ -56,11 +56,14 @@ impl VM {
     pub fn interpret(&mut self, chunk: Chunk, mode: InterpretMode) -> InterpretResult {
         let mut ip = 0;
         if mode == InterpretMode::Debug {
+            println!("Disassembling...");
             chunk.disassemble();
+            println!("Interpreting...");
         }
         loop {
             let (instruction, line) = &chunk.code[ip];
             if mode == InterpretMode::Debug {
+                print!("// ");
                 instruction.disassemble();
             }
             use OpCode::*;
@@ -70,7 +73,7 @@ impl VM {
                     return InterpretResult::Ok;
                 }
                 Constant(value) => {
-                    self.stack.push(*value);
+                    self.stack.push(value.clone());
                 }
                 Negate => match self.stack.pop() {
                     Some(Value::Number(value)) => self.stack.push(Value::Number(-value)),
@@ -105,6 +108,9 @@ impl VM {
                         self.stack.push(Value::Boolean(a == b))
                     }
                     (Some(Value::Nil), Some(Value::Nil)) => self.stack.push(Value::Boolean(true)),
+                    (Some(Value::Obj(a)), Some(Value::Obj(b))) => {
+                        self.stack.push(Value::Boolean(a == b));
+                    }
                     _ => {
                         eprintln!("Error at line {}, Operands must be of the same type", line);
                         return InterpretResult::RuntimeError;

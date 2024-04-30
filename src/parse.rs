@@ -1,5 +1,5 @@
 use crate::{
-    common::{OpCode, Value},
+    common::{self, OpCode, Value},
     tokens::{Token, TokenType, Tokenizer},
 };
 use std::iter::Peekable;
@@ -51,6 +51,13 @@ fn prefix_parselets(tok: Token, parser: &mut Parser) -> Option<Expr> {
     match tok.token_type {
         TokenType::Number(n) => {
             let expr = vec![(OpCode::Constant(Value::Number(n)), tok.line)];
+            Some(expr)
+        }
+        TokenType::Str(s) => {
+            let expr = vec![(
+                OpCode::Constant(Value::Obj(common::Obj::String(s))),
+                tok.line,
+            )];
             Some(expr)
         }
         TokenType::True => {

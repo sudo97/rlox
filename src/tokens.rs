@@ -68,6 +68,7 @@ impl Token {
             | TokenType::LessEqual => 4,
             TokenType::EqualEqual | TokenType::BangEqual => 3,
             TokenType::Number(_) => 2, // Assuming you want literals to have a precedence.
+            TokenType::Str(_) => 2,
             TokenType::Nil | TokenType::True | TokenType::False => 2,
             TokenType::Identifier(_) => 2,
             TokenType::LeftParen | TokenType::RightParen => 1, // Parentheses to control precedence explicitly.

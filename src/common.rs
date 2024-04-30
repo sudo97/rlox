@@ -1,10 +1,11 @@
 use std::fmt;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Number(f64),
     Boolean(bool),
     Nil,
+    Obj(Obj),
 }
 
 impl fmt::Display for Value {
@@ -13,6 +14,7 @@ impl fmt::Display for Value {
             Value::Number(n) => write!(f, "Number({})", n),
             Value::Boolean(b) => write!(f, "Boolean({})", b),
             Value::Nil => write!(f, "Nil"),
+            Value::Obj(obj) => write!(f, "Obj({:?})", obj),
         }
     }
 }
@@ -30,6 +32,12 @@ pub enum OpCode {
     Equal,
     Greater,
     Less,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Obj {
+    String(String),
+    // more to come
 }
 
 pub struct Chunk<'a> {
