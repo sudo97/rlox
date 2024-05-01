@@ -1,4 +1,4 @@
-use crate::common::{Chunk, Disassembler, OpCode, Value};
+use crate::common::{Chunk, Disassembler, Obj, OpCode, Value};
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum InterpretMode {
@@ -34,14 +34,20 @@ macro_rules! val_constr {
     };
 }
 
+macro_rules! concat_strings {
+    ($a:expr, $b:expr) => {
+        Value::Obj(Obj::String(format!("{}{}", $b, $a)))
+    };
+}
+
 macro_rules! binary_op {
     ($vm:ident, $op:tt, $line:expr) => {
         match ($vm.stack.pop(), $vm.stack.pop()) {
             (Some(Value::Number(a)), Some(Value::Number(b))) => {
                 $vm.stack.push(val_constr!(b, a, $op))
             }
-            (Some(Value::Obj(_)), Some(Value::Obj(_))) => {
-                todo!("Concat strings")
+            (Some(Value::Obj(Obj::String(a))), Some(Value::Obj(Obj::String(b)))) => {
+                $vm.stack.push(concat_strings!(a, b));
             }
             _ => {
                 eprintln!("Error at line {}, Operands are incompatible", $line);
