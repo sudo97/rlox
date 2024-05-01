@@ -77,6 +77,3 @@ fn main() {
         repl(interpret_mode);
     }
 }
-
-#[cfg(test)]
-mod tests {}
