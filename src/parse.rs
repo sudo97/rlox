@@ -26,23 +26,15 @@ impl<'a> Parser<'a> {
             println!("Unexpected end of input"); // TODO: rewrite with Result to avoid this println-s
             None
         })?;
-        // println!("{}, Parsing {:?}", precedence, token);
         let mut left = prefix_parselets(token, self)?;
-        // println!("{}, Parsed left {:?}", precedence, left);
         while precedence < self.peek_precedence() {
             let token = self.consume().or_else(|| {
                 println!("Unexpected end of input");
                 None
             })?;
             let mut right = infix_parselets(token, self)?;
-            // println!("{}, Parsed right {:?}", precedence, right);
             left.append(&mut right);
-            // println!(
-            //     "{}, Parsed left after appending right {:?}",
-            //     precedence, left
-            // );
         }
-        // println!("{}, Returning {:?}", precedence, left);
         Some(left)
     }
 }
@@ -165,4 +157,169 @@ fn infix_parselets(tok: Token, parser: &mut Parser) -> Option<Expr> {
 type Expr = Vec<(OpCode, i32)>;
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+    use crate::{compile::Source, tokens::Tokenizer};
+
+    #[test]
+    fn test_parse_number() {
+        let input = Source("42".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0).unwrap();
+        assert_eq!(expr, vec![(OpCode::Constant(Value::Number(42.0)), 0)]);
+    }
+
+    #[test]
+    fn test_parse_greater() {
+        let input = Source(">".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0);
+        assert_eq!(expr, None);
+    }
+
+    #[test]
+    fn test_x_gt_y() {
+        let input = Source("10 > 5".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0);
+        assert_eq!(
+            expr,
+            Some(vec![
+                (OpCode::Constant(Value::Number(10.0)), 0),
+                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Greater, 0)
+            ])
+        );
+    }
+
+    #[test]
+    fn test_parse_less() {
+        let input = Source("<".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0);
+        assert_eq!(expr, None);
+    }
+
+    #[test]
+    fn test_x_lt_y() {
+        let input = Source("10 < 5".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0);
+        assert_eq!(
+            expr,
+            Some(vec![
+                (OpCode::Constant(Value::Number(10.0)), 0),
+                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Less, 0)
+            ])
+        );
+    }
+
+    #[test]
+    fn test_parse_greater_equal() {
+        let input = Source(">=".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0);
+        assert_eq!(expr, None);
+    }
+
+    #[test]
+    fn test_x_gte_y() {
+        let input = Source("10 >= 5".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0);
+        assert_eq!(
+            expr,
+            Some(vec![
+                (OpCode::Constant(Value::Number(10.0)), 0),
+                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Less, 0),
+                (OpCode::Not, 0)
+            ])
+        );
+    }
+
+    #[test]
+    fn test_parse_less_equal() {
+        let input = Source("<=".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0);
+        assert_eq!(expr, None);
+    }
+
+    #[test]
+    fn test_x_lte_y() {
+        let input = Source("10 <= 5".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0);
+        assert_eq!(
+            expr,
+            Some(vec![
+                (OpCode::Constant(Value::Number(10.0)), 0),
+                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Greater, 0),
+                (OpCode::Not, 0)
+            ])
+        );
+    }
+
+    #[test]
+    fn test_parse_equal_equal() {
+        let input = Source("==".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0);
+        assert_eq!(expr, None);
+    }
+
+    #[test]
+    fn test_x_eq_y() {
+        let input = Source("10 == 5".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0);
+        assert_eq!(
+            expr,
+            Some(vec![
+                (OpCode::Constant(Value::Number(10.0)), 0),
+                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Equal, 0)
+            ])
+        );
+    }
+
+    #[test]
+    fn test_parse_bang_equal() {
+        let input = Source("!=".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0);
+        assert_eq!(expr, None);
+    }
+
+    #[test]
+    fn test_x_neq_y() {
+        let input = Source("10 != 5".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0);
+        assert_eq!(
+            expr,
+            Some(vec![
+                (OpCode::Constant(Value::Number(10.0)), 0),
+                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Equal, 0),
+                (OpCode::Not, 0)
+            ])
+        );
+    }
+}

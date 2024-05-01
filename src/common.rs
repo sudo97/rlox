@@ -19,7 +19,7 @@ impl fmt::Display for Value {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum OpCode {
     Return,
     Constant(Value),
