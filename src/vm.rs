@@ -73,7 +73,7 @@ impl VM {
                     return InterpretResult::Ok;
                 }
                 Constant(value) => self.stack.push(match value {
-                    Value::Obj(_) => value.clone(), // to perhaps avoid unnecessary clone?
+                    Value::Obj(_) => value.clone(), // to perhaps avoid unnecessary clone? FIXME
                     Value::Number(n) => Value::Number(*n),
                     Value::Boolean(b) => Value::Boolean(*b),
                     Value::Nil => Value::Nil,
