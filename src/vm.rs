@@ -40,8 +40,11 @@ macro_rules! binary_op {
             (Some(Value::Number(a)), Some(Value::Number(b))) => {
                 $vm.stack.push(val_constr!(b, a, $op))
             }
+            (Some(Value::Obj(_)), Some(Value::Obj(_))) => {
+                todo!("Concat strings")
+            }
             _ => {
-                eprintln!("Error at line {}, Operands must be numbers", $line);
+                eprintln!("Error at line {}, Operands are incompatible", $line);
                 return InterpretResult::RuntimeError;
             }
         }
