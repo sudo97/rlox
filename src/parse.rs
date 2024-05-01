@@ -322,4 +322,19 @@ mod tests {
             ])
         );
     }
+
+    #[test]
+    fn test_parse_string() {
+        let input = Source("\"hello world\"".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse(0).unwrap();
+        assert_eq!(
+            expr,
+            vec![(
+                OpCode::Constant(Value::Obj(common::Obj::String("hello world".to_string()))),
+                0
+            )]
+        );
+    }
 }
