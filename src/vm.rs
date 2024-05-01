@@ -72,9 +72,12 @@ impl VM {
                     self.stack.pop();
                     return InterpretResult::Ok;
                 }
-                Constant(value) => {
-                    self.stack.push(value.clone());
-                }
+                Constant(value) => self.stack.push(match value {
+                    Value::Obj(_) => value.clone(), // to perhaps avoid unnecessary clone?
+                    Value::Number(n) => Value::Number(*n),
+                    Value::Boolean(b) => Value::Boolean(*b),
+                    Value::Nil => Value::Nil,
+                }),
                 Negate => match self.stack.pop() {
                     Some(Value::Number(value)) => self.stack.push(Value::Number(-value)),
                     _ => return InterpretResult::RuntimeError,
