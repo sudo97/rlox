@@ -56,3 +56,9 @@ and then in the main loop:
 Istead of obtaining a parselet, then calling it, I just call the function with two args.
 
 If I ever feel like prefix_parselets or infix_parselets are a bit too long, I can always define as many static functions as I want and call them within the branches without worrying about fitting every parselet into one type.
+
+*UPD 01-05-2024*
+
+On garbage collection. Since Rust cleans its own mess, I don't have to clean up the heap manually. So for strings, I don't implement an intrusive list, like in the book. For now I have no idea if it will shoot me in the foot later, since it has something to do with future garbage collection. But for now it is what it is.
+
+P.S. As I type this, Copilot says I should've used a more functional style of programming. I do love functional, but how does it know?
