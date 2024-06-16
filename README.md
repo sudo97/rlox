@@ -36,7 +36,7 @@ Since I don't use a hash-table, I don't need a parselet either. It would be clos
 +        TokenType::True => {
 ```
 
-And so on. Parser goes to a parameter of prefix_parselets, and I just unwrap the box and get rid of the closure.
+And so on. Parser goes to a parameter of prefix\_parselets, and I just unwrap the box and get rid of the closure.
 
 and then in the main loop:
 ```diff
@@ -55,7 +55,7 @@ and then in the main loop:
 
 Istead of obtaining a parselet, then calling it, I just call the function with two args.
 
-If I ever feel like prefix_parselets or infix_parselets are a bit too long, I can always define as many static functions as I want and call them within the branches without worrying about fitting every parselet into one type.
+If I ever feel like prefix\_parselets or infix\_parselets are a bit too long, I can always define as many static functions as I want and call them within the branches without worrying about fitting every parselet into one type.
 
 *UPD 01-05-2024*
 
