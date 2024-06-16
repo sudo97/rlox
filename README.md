@@ -62,3 +62,7 @@ If I ever feel like prefix\_parselets or infix\_parselets are a bit too long, I 
 On garbage collection. Since Rust cleans its own mess, I don't have to clean up the heap manually. So for strings, I don't implement an intrusive list, like in the book. For now I have no idea if it will shoot me in the foot later, since it has something to do with future garbage collection. But for now it is what it is.
 
 P.S. As I type this, Copilot says I should've used a more functional style of programming. I do love functional, but how does it know?
+
+*UPD 16-06-2024*
+
+Working on statements. Added print statements, nothing more for now. Really digging TDD approach. I encountered panicMode in the book, but since I didn't add this field previously, I think I'll take this shortcut.
