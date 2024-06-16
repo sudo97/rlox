@@ -134,6 +134,13 @@ impl VM {
                 Less => {
                     binary_op!(self, <, line);
                 }
+                Print => match self.stack.pop() {
+                    Some(val) => println!("{}", val.print_lox()),
+                    None => eprintln!(
+                        "Error at line {}, nothing to print, the stack is empty",
+                        line
+                    ),
+                },
             }
             if mode == InterpretMode::Debug {
                 self.stack.disassemble();

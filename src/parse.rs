@@ -21,7 +21,73 @@ impl<'a> Parser<'a> {
         self.tokens.peek().map_or(0, |t| t.precedence())
     }
 
-    pub fn parse(&mut self, precedence: i32) -> Option<Expr> {
+    fn not_eof(&mut self) -> bool {
+        self.tokens.peek().is_some()
+    }
+
+    fn declaration(&mut self) -> Option<Expr> {
+        self.statement()
+    }
+
+    fn print_statement(&mut self) -> Option<Expr> {
+        let t = self.consume()?;
+        if !matches!(
+            t,
+            Token {
+                token_type: TokenType::Print,
+                ..
+            }
+        ) {
+            panic!(
+                "Expected print statement to be established by the previous level. This should never happen"
+            );
+        }
+        let mut expr = self.expression(0)?;
+        expr.push((OpCode::Print, self.tokens.peek()?.line));
+        let tok = self.consume()?;
+        match tok.token_type {
+            TokenType::Semicolon => Some(expr),
+            _ => {
+                println!("Expected ;");
+                None
+            }
+        }
+    }
+
+    fn statement(&mut self) -> Option<Expr> {
+        match self.tokens.peek() {
+            Some(Token {
+                token_type: TokenType::Print,
+                line: _,
+            }) => self.print_statement(),
+            _ => self.expression_statement(),
+        }
+    }
+
+    fn expression_statement(&mut self) -> Option<Expr> {
+        let expr = self.expression(0)?;
+        match self.consume() {
+            Some(Token {
+                token_type: TokenType::Semicolon,
+                ..
+            }) => Some(expr),
+            _ => {
+                println!("Expected ;");
+                None
+            }
+        }
+    }
+
+    pub fn parse(&mut self) -> Option<Expr> {
+        let mut result = vec![];
+        while self.not_eof() {
+            let mut expr = self.declaration()?;
+            result.append(&mut expr);
+        }
+        Some(result)
+    }
+
+    pub fn expression(&mut self, precedence: i32) -> Option<Expr> {
         let token = self.consume().or_else(|| {
             println!("Unexpected end of input"); // TODO: rewrite with Result to avoid this println-s
             None
@@ -65,21 +131,21 @@ fn prefix_parselets(tok: Token, parser: &mut Parser) -> Option<Expr> {
             Some(expr)
         }
         TokenType::Bang => {
-            let mut expr = parser.parse(tok.precedence())?;
+            let mut expr = parser.expression(tok.precedence())?;
             expr.push((OpCode::Not, tok.line));
             Some(expr)
         }
         TokenType::Plus => {
-            let expr = parser.parse(tok.precedence())?;
+            let expr = parser.expression(tok.precedence())?;
             Some(expr)
         }
         TokenType::Minus => {
-            let mut expr = parser.parse(tok.precedence())?;
+            let mut expr = parser.expression(tok.precedence())?;
             expr.push((OpCode::Negate, tok.line));
             Some(expr)
         }
         TokenType::LeftParen => {
-            let expr = parser.parse(tok.precedence())?;
+            let expr = parser.expression(tok.precedence())?;
             match parser.consume()?.token_type {
                 TokenType::RightParen => Some(expr),
                 _ => None,
@@ -95,54 +161,54 @@ fn prefix_parselets(tok: Token, parser: &mut Parser) -> Option<Expr> {
 fn infix_parselets(tok: Token, parser: &mut Parser) -> Option<Expr> {
     match tok.token_type {
         TokenType::Plus => {
-            let mut expr = parser.parse(tok.precedence())?;
+            let mut expr = parser.expression(tok.precedence())?;
             expr.push((OpCode::Add, tok.line));
             Some(expr)
         }
         TokenType::Minus => {
-            let mut expr = parser.parse(tok.precedence())?;
+            let mut expr = parser.expression(tok.precedence())?;
             expr.push((OpCode::Subtract, tok.line));
             Some(expr)
         }
         TokenType::Star => {
-            let mut expr = parser.parse(tok.precedence())?;
+            let mut expr = parser.expression(tok.precedence())?;
             expr.push((OpCode::Multiply, tok.line));
             Some(expr)
         }
         TokenType::Slash => {
-            let mut expr = parser.parse(tok.precedence())?;
+            let mut expr = parser.expression(tok.precedence())?;
             expr.push((OpCode::Divide, tok.line));
             Some(expr)
         }
         TokenType::Greater => {
-            let mut expr = parser.parse(tok.precedence())?;
+            let mut expr = parser.expression(tok.precedence())?;
             expr.push((OpCode::Greater, tok.line));
             Some(expr)
         }
         TokenType::Less => {
-            let mut expr = parser.parse(tok.precedence())?;
+            let mut expr = parser.expression(tok.precedence())?;
             expr.push((OpCode::Less, tok.line));
             Some(expr)
         }
         TokenType::EqualEqual => {
-            let mut expr = parser.parse(tok.precedence())?;
+            let mut expr = parser.expression(tok.precedence())?;
             expr.push((OpCode::Equal, tok.line));
             Some(expr)
         }
         TokenType::BangEqual => {
-            let mut expr = parser.parse(tok.precedence())?;
+            let mut expr = parser.expression(tok.precedence())?;
             expr.push((OpCode::Equal, tok.line));
             expr.push((OpCode::Not, tok.line));
             Some(expr)
         }
         TokenType::GreaterEqual => {
-            let mut expr = parser.parse(tok.precedence())?;
+            let mut expr = parser.expression(tok.precedence())?;
             expr.push((OpCode::Less, tok.line));
             expr.push((OpCode::Not, tok.line));
             Some(expr)
         }
         TokenType::LessEqual => {
-            let mut expr = parser.parse(tok.precedence())?;
+            let mut expr = parser.expression(tok.precedence())?;
             expr.push((OpCode::Greater, tok.line));
             expr.push((OpCode::Not, tok.line));
             Some(expr)
@@ -157,7 +223,7 @@ fn infix_parselets(tok: Token, parser: &mut Parser) -> Option<Expr> {
 type Expr = Vec<(OpCode, i32)>;
 
 #[cfg(test)]
-mod tests {
+mod test_expr {
     use super::*;
     use crate::{compile::Source, tokens::Tokenizer};
 
@@ -166,7 +232,7 @@ mod tests {
         let input = Source("42".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0).unwrap();
+        let expr = parser.expression(0).unwrap();
         assert_eq!(expr, vec![(OpCode::Constant(Value::Number(42.0)), 0)]);
     }
 
@@ -175,7 +241,7 @@ mod tests {
         let input = Source(">".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0);
+        let expr = parser.expression(0);
         assert_eq!(expr, None);
     }
 
@@ -184,7 +250,7 @@ mod tests {
         let input = Source("10 > 5".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0);
+        let expr = parser.expression(0);
         assert_eq!(
             expr,
             Some(vec![
@@ -200,7 +266,7 @@ mod tests {
         let input = Source("<".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0);
+        let expr = parser.expression(0);
         assert_eq!(expr, None);
     }
 
@@ -209,7 +275,7 @@ mod tests {
         let input = Source("10 < 5".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0);
+        let expr = parser.expression(0);
         assert_eq!(
             expr,
             Some(vec![
@@ -225,7 +291,7 @@ mod tests {
         let input = Source(">=".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0);
+        let expr = parser.expression(0);
         assert_eq!(expr, None);
     }
 
@@ -234,7 +300,7 @@ mod tests {
         let input = Source("10 >= 5".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0);
+        let expr = parser.expression(0);
         assert_eq!(
             expr,
             Some(vec![
@@ -251,7 +317,7 @@ mod tests {
         let input = Source("<=".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0);
+        let expr = parser.expression(0);
         assert_eq!(expr, None);
     }
 
@@ -260,7 +326,7 @@ mod tests {
         let input = Source("10 <= 5".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0);
+        let expr = parser.expression(0);
         assert_eq!(
             expr,
             Some(vec![
@@ -277,7 +343,7 @@ mod tests {
         let input = Source("==".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0);
+        let expr = parser.expression(0);
         assert_eq!(expr, None);
     }
 
@@ -286,7 +352,7 @@ mod tests {
         let input = Source("10 == 5".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0);
+        let expr = parser.expression(0);
         assert_eq!(
             expr,
             Some(vec![
@@ -302,7 +368,7 @@ mod tests {
         let input = Source("!=".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0);
+        let expr = parser.expression(0);
         assert_eq!(expr, None);
     }
 
@@ -311,7 +377,7 @@ mod tests {
         let input = Source("10 != 5".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0);
+        let expr = parser.expression(0);
         assert_eq!(
             expr,
             Some(vec![
@@ -328,13 +394,60 @@ mod tests {
         let input = Source("\"hello world\"".into());
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
-        let expr = parser.parse(0).unwrap();
+        let expr = parser.expression(0).unwrap();
         assert_eq!(
             expr,
             vec![(
                 OpCode::Constant(Value::Obj(common::Obj::String("hello world".to_string()))),
                 0
             )]
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_parse {
+    use super::*;
+    use crate::{compile::Source, tokens::Tokenizer};
+
+    #[test]
+    fn parse_print_statement() {
+        let input = Source("print 42;".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse();
+        assert_eq!(
+            expr,
+            Some(vec![
+                (OpCode::Constant(Value::Number(42.0)), 0),
+                (OpCode::Print, 0),
+            ])
+        );
+    }
+
+    #[test]
+    fn test_parse_number() {
+        let input = Source("42;".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse();
+        assert_eq!(expr, Some(vec![(OpCode::Constant(Value::Number(42.0)), 0)]));
+    }
+
+    #[test]
+    fn parse_print_with_paren() {
+        let input = Source("print (42 + 5);".into());
+        let tokenizer = Tokenizer::new(&input).peekable();
+        let mut parser = Parser::new(tokenizer);
+        let expr = parser.parse();
+        assert_eq!(
+            expr,
+            Some(vec![
+                (OpCode::Constant(Value::Number(42.0)), 0),
+                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Add, 0),
+                (OpCode::Print, 0)
+            ])
         );
     }
 }

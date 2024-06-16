@@ -72,7 +72,9 @@ impl Token {
             TokenType::Nil | TokenType::True | TokenType::False => 2,
             TokenType::Identifier(_) => 2,
             TokenType::LeftParen | TokenType::RightParen => 1, // Parentheses to control precedence explicitly.
+            TokenType::Semicolon => 0,
             _ => {
+                println!("Unhandled token type: {:?}", self.token_type);
                 todo!("Handle the rest of the token types in Token::precedence()")
             }
         }

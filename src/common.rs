@@ -19,6 +19,20 @@ impl fmt::Display for Value {
     }
 }
 
+impl Value {
+    pub fn print_lox(&self) -> String {
+        match self {
+            Value::Number(n) => format!("{}", n),
+            Value::Boolean(b) => format!("{}", b),
+            Value::Nil => String::from("nil"),
+            Value::Obj(obj) => match obj {
+                Obj::String(s) => s.into(),
+                // _ => String::from("unknown object"),
+            },
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum OpCode {
     Return,
@@ -32,6 +46,7 @@ pub enum OpCode {
     Equal,
     Greater,
     Less,
+    Print,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -79,6 +94,7 @@ impl Disassembler for OpCode {
             OpCode::Equal => println!("Equal"),
             OpCode::Greater => println!("Greater"),
             OpCode::Less => println!("Less"),
+            OpCode::Print => println!("Print"),
         }
     }
 }

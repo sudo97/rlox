@@ -19,8 +19,10 @@ fn repl(mode: vm::InterpretMode) {
         match std::io::stdin().read_line(&mut input) {
             Ok(n) => {
                 if n > 0 {
-                    if let Some(chunk) = Source(input).compile("repl") {
+                    if let Some(chunk) = Source(input).compile("repl", mode) {
                         vm.interpret(chunk, mode);
+                    } else {
+                        println!("Failed to compile");
                     }
                 } else {
                     println!("Bye!");
@@ -39,7 +41,7 @@ fn run_file(path: &str, mode: vm::InterpretMode) {
     let source =
         Source(std::fs::read_to_string(path).expect("Something went wrong reading the file"));
     let mut vm = VM::new();
-    match source.compile(path) {
+    match source.compile(path, mode) {
         Some(chunk) => {
             if let vm::InterpretResult::RuntimeError = vm.interpret(chunk, mode) {
                 std::process::exit(70);
