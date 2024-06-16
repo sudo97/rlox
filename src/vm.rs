@@ -9,7 +9,7 @@ pub enum InterpretMode {
 
 pub struct VM {
     pub stack: Vec<Value>,
-    pub global_env: HashMap<String, Value>,
+    // pub global_env: HashMap<String, Value>,
 }
 
 impl Disassembler for Vec<Value> {
@@ -63,13 +63,13 @@ impl VM {
     pub fn new() -> Self {
         VM {
             stack: vec![],
-            global_env: HashMap::new(),
+            // global_env: HashMap::new(),
         }
     }
 
     pub fn interpret(&mut self, chunk: Chunk, mode: InterpretMode) -> InterpretResult {
-        self.global_env
-            .insert("Let's try it".into(), Value::Boolean(false)); // Temporarily
+        // self.global_env
+        //     .insert("Let's try it".into(), Value::Boolean(false)); // Temporarily
         let mut ip = 0;
         if mode == InterpretMode::Debug {
             println!("Disassembling...");
