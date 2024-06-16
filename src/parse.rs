@@ -65,12 +65,15 @@ impl<'a> Parser<'a> {
     }
 
     fn expression_statement(&mut self) -> Option<Expr> {
-        let expr = self.expression(0)?;
+        let mut expr = self.expression(0)?;
         match self.consume() {
             Some(Token {
                 token_type: TokenType::Semicolon,
-                ..
-            }) => Some(expr),
+                line,
+            }) => {
+                expr.push((OpCode::Pop, line));
+                Some(expr)
+            }
             _ => {
                 println!("Expected ;");
                 None
@@ -431,7 +434,13 @@ mod test_parse {
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
         let expr = parser.parse();
-        assert_eq!(expr, Some(vec![(OpCode::Constant(Value::Number(42.0)), 0)]));
+        assert_eq!(
+            expr,
+            Some(vec![
+                (OpCode::Constant(Value::Number(42.0)), 0),
+                (OpCode::Pop, 0)
+            ])
+        );
     }
 
     #[test]

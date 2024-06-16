@@ -47,6 +47,7 @@ pub enum OpCode {
     Greater,
     Less,
     Print,
+    Pop,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -95,6 +96,7 @@ impl Disassembler for OpCode {
             OpCode::Greater => println!("Greater"),
             OpCode::Less => println!("Less"),
             OpCode::Print => println!("Print"),
+            OpCode::Pop => println!("Pop"),
         }
     }
 }
