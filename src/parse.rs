@@ -60,6 +60,10 @@ impl<'a> Parser<'a> {
                 token_type: TokenType::Print,
                 line: _,
             }) => self.print_statement(),
+            Some(Token {
+                token_type: TokenType::Var,
+                line: _,
+            }) => todo!("Var statement"),
             _ => self.expression_statement(),
         }
     }
