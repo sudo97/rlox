@@ -1,5 +1,5 @@
 use crate::common::{Chunk, Disassembler, Obj, OpCode, Value};
-use std::collections::HashMap;
+// use std::collections::HashMap;
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum InterpretMode {
@@ -148,6 +148,9 @@ impl VM {
                         line
                     ),
                 },
+                Pop => {
+                    self.stack.pop();
+                }
             }
             if mode == InterpretMode::Debug {
                 self.stack.disassemble();
