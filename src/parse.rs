@@ -2,7 +2,7 @@ use crate::{
     common::{self, OpCode, Value},
     tokens::{Token, TokenType, Tokenizer},
 };
-use std::iter::Peekable;
+use std::{iter::Peekable, rc::Rc};
 
 pub struct Parser<'a> {
     tokens: Peekable<Tokenizer<'a>>,
@@ -115,26 +115,26 @@ impl<'a> Parser<'a> {
 fn prefix_parselets(tok: Token, parser: &mut Parser) -> Option<Expr> {
     match tok.token_type {
         TokenType::Number(n) => {
-            let expr = vec![(OpCode::Constant(Value::Number(n)), tok.line)];
+            let expr = vec![(OpCode::Constant(Rc::new(Value::Number(n))), tok.line)];
             Some(expr)
         }
         TokenType::Str(s) => {
             let expr = vec![(
-                OpCode::Constant(Value::Obj(common::Obj::String(s))),
+                OpCode::Constant(Rc::new(Value::Obj(common::Obj::String(s)))),
                 tok.line,
             )];
             Some(expr)
         }
         TokenType::True => {
-            let expr = vec![(OpCode::Constant(Value::Boolean(true)), tok.line)];
+            let expr = vec![(OpCode::Constant(Rc::new(Value::Boolean(true))), tok.line)];
             Some(expr)
         }
         TokenType::False => {
-            let expr = vec![(OpCode::Constant(Value::Boolean(false)), tok.line)];
+            let expr = vec![(OpCode::Constant(Rc::new(Value::Boolean(false))), tok.line)];
             Some(expr)
         }
         TokenType::Nil => {
-            let expr = vec![(OpCode::Constant(Value::Nil), tok.line)];
+            let expr = vec![(OpCode::Constant(Rc::new(Value::Nil)), tok.line)];
             Some(expr)
         }
         TokenType::Bang => {
@@ -240,7 +240,10 @@ mod test_expr {
         let tokenizer = Tokenizer::new(&input).peekable();
         let mut parser = Parser::new(tokenizer);
         let expr = parser.expression(0).unwrap();
-        assert_eq!(expr, vec![(OpCode::Constant(Value::Number(42.0)), 0)]);
+        assert_eq!(
+            expr,
+            vec![(OpCode::Constant(Rc::new(Value::Number(42.0))), 0)]
+        );
     }
 
     #[test]
@@ -261,8 +264,8 @@ mod test_expr {
         assert_eq!(
             expr,
             Some(vec![
-                (OpCode::Constant(Value::Number(10.0)), 0),
-                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Constant(Rc::new(Value::Number(10.0))), 0),
+                (OpCode::Constant(Rc::new(Value::Number(5.0))), 0),
                 (OpCode::Greater, 0)
             ])
         );
@@ -286,8 +289,8 @@ mod test_expr {
         assert_eq!(
             expr,
             Some(vec![
-                (OpCode::Constant(Value::Number(10.0)), 0),
-                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Constant(Rc::new(Value::Number(10.0))), 0),
+                (OpCode::Constant(Rc::new(Value::Number(5.0))), 0),
                 (OpCode::Less, 0)
             ])
         );
@@ -311,8 +314,8 @@ mod test_expr {
         assert_eq!(
             expr,
             Some(vec![
-                (OpCode::Constant(Value::Number(10.0)), 0),
-                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Constant(Rc::new(Value::Number(10.0))), 0),
+                (OpCode::Constant(Rc::new(Value::Number(5.0))), 0),
                 (OpCode::Less, 0),
                 (OpCode::Not, 0)
             ])
@@ -337,8 +340,8 @@ mod test_expr {
         assert_eq!(
             expr,
             Some(vec![
-                (OpCode::Constant(Value::Number(10.0)), 0),
-                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Constant(Rc::new(Value::Number(10.0))), 0),
+                (OpCode::Constant(Rc::new(Value::Number(5.0))), 0),
                 (OpCode::Greater, 0),
                 (OpCode::Not, 0)
             ])
@@ -363,8 +366,8 @@ mod test_expr {
         assert_eq!(
             expr,
             Some(vec![
-                (OpCode::Constant(Value::Number(10.0)), 0),
-                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Constant(Rc::new(Value::Number(10.0))), 0),
+                (OpCode::Constant(Rc::new(Value::Number(5.0))), 0),
                 (OpCode::Equal, 0)
             ])
         );
@@ -388,8 +391,8 @@ mod test_expr {
         assert_eq!(
             expr,
             Some(vec![
-                (OpCode::Constant(Value::Number(10.0)), 0),
-                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Constant(Rc::new(Value::Number(10.0))), 0),
+                (OpCode::Constant(Rc::new(Value::Number(5.0))), 0),
                 (OpCode::Equal, 0),
                 (OpCode::Not, 0)
             ])
@@ -405,7 +408,9 @@ mod test_expr {
         assert_eq!(
             expr,
             vec![(
-                OpCode::Constant(Value::Obj(common::Obj::String("hello world".to_string()))),
+                OpCode::Constant(Rc::new(Value::Obj(common::Obj::String(
+                    "hello world".to_string()
+                )))),
                 0
             )]
         );
@@ -414,6 +419,8 @@ mod test_expr {
 
 #[cfg(test)]
 mod test_parse {
+    use std::rc::Rc;
+
     use super::*;
     use crate::{compile::Source, tokens::Tokenizer};
 
@@ -426,7 +433,7 @@ mod test_parse {
         assert_eq!(
             expr,
             Some(vec![
-                (OpCode::Constant(Value::Number(42.0)), 0),
+                (OpCode::Constant(Rc::new(Value::Number(42.0))), 0),
                 (OpCode::Print, 0),
             ])
         );
@@ -441,7 +448,7 @@ mod test_parse {
         assert_eq!(
             expr,
             Some(vec![
-                (OpCode::Constant(Value::Number(42.0)), 0),
+                (OpCode::Constant(Rc::new(Value::Number(42.0))), 0),
                 (OpCode::Pop, 0)
             ])
         );
@@ -456,8 +463,8 @@ mod test_parse {
         assert_eq!(
             expr,
             Some(vec![
-                (OpCode::Constant(Value::Number(42.0)), 0),
-                (OpCode::Constant(Value::Number(5.0)), 0),
+                (OpCode::Constant(Rc::new(Value::Number(42.0))), 0),
+                (OpCode::Constant(Rc::new(Value::Number(5.0))), 0),
                 (OpCode::Add, 0),
                 (OpCode::Print, 0)
             ])

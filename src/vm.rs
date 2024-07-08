@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::common::{Chunk, Disassembler, Obj, OpCode, Value};
 // use std::collections::HashMap;
 
@@ -8,11 +10,11 @@ pub enum InterpretMode {
 }
 
 pub struct VM {
-    pub stack: Vec<Value>,
+    pub stack: Vec<Rc<Value>>,
     // pub global_env: HashMap<String, Value>,
 }
 
-impl Disassembler for Vec<Value> {
+impl Disassembler for Vec<Rc<Value>> {
     fn disassemble(&self) {
         for slot in self.iter() {
             print!("[ {} ]", slot);
@@ -45,12 +47,18 @@ macro_rules! concat_strings {
 macro_rules! binary_op {
     ($vm:ident, $op:tt, $line:expr) => {
         match ($vm.stack.pop(), $vm.stack.pop()) {
-            (Some(Value::Number(a)), Some(Value::Number(b))) => {
-                $vm.stack.push(val_constr!(b, a, $op))
-            }
-            (Some(Value::Obj(Obj::String(a))), Some(Value::Obj(Obj::String(b)))) => {
-                $vm.stack.push(concat_strings!(a, b));
-            }
+            (Some(a), Some(b)) => match (&*a, &*b) {
+                (Value::Number(a), Value::Number(b)) => {
+                    $vm.stack.push(Rc::new(val_constr!(b, a, $op)));
+                }
+                (Value::Obj(Obj::String(a)), Value::Obj(Obj::String(b))) => {
+                    $vm.stack.push(Rc::new(concat_strings!(a, b)));
+                }
+                _ => {
+                    eprintln!("Error at line {}, Operands are incompatible", $line);
+                    return InterpretResult::RuntimeError;
+                }
+            },
             _ => {
                 eprintln!("Error at line {}, Operands are incompatible", $line);
                 return InterpretResult::RuntimeError;
@@ -88,14 +96,12 @@ impl VM {
                     self.stack.pop();
                     return InterpretResult::Ok;
                 }
-                Constant(value) => self.stack.push(match value {
-                    Value::Obj(_) => value.clone(), // to perhaps avoid unnecessary clone? FIXME
-                    Value::Number(n) => Value::Number(*n),
-                    Value::Boolean(b) => Value::Boolean(*b),
-                    Value::Nil => Value::Nil,
-                }),
+                Constant(value) => self.stack.push(Rc::clone(value)),
                 Negate => match self.stack.pop() {
-                    Some(Value::Number(value)) => self.stack.push(Value::Number(-value)),
+                    Some(val) => match *val {
+                        Value::Number(n) => self.stack.push(Rc::new(Value::Number(-n))),
+                        _ => return InterpretResult::RuntimeError,
+                    },
                     _ => return InterpretResult::RuntimeError,
                 },
                 Add => {
@@ -111,25 +117,37 @@ impl VM {
                     binary_op!(self, /, line);
                 }
                 Not => match self.stack.pop() {
-                    Some(Value::Nil) => self.stack.push(Value::Boolean(true)),
-                    Some(Value::Number(x)) => self.stack.push(Value::Boolean(x != 0.0)),
-                    Some(Value::Boolean(value)) => self.stack.push(Value::Boolean(!value)),
+                    Some(val) => match *val {
+                        Value::Nil => self.stack.push(Rc::new(Value::Boolean(true))),
+                        Value::Number(x) => self.stack.push(Rc::new(Value::Boolean(x != 0.0))),
+                        Value::Boolean(value) => self.stack.push(Rc::new(Value::Boolean(!value))),
+                        Value::Obj(_) => {
+                            eprintln!("Error at line {}. Operand must be a boolean", line);
+                            return InterpretResult::RuntimeError;
+                        }
+                    },
                     _ => {
                         eprintln!("Error at line {}. Operand must be a boolean", line);
                         return InterpretResult::RuntimeError;
                     }
                 },
                 Equal => match (self.stack.pop(), self.stack.pop()) {
-                    (Some(Value::Number(a)), Some(Value::Number(b))) => {
-                        self.stack.push(Value::Boolean(a == b))
-                    }
-                    (Some(Value::Boolean(a)), Some(Value::Boolean(b))) => {
-                        self.stack.push(Value::Boolean(a == b))
-                    }
-                    (Some(Value::Nil), Some(Value::Nil)) => self.stack.push(Value::Boolean(true)),
-                    (Some(Value::Obj(a)), Some(Value::Obj(b))) => {
-                        self.stack.push(Value::Boolean(a == b));
-                    }
+                    (Some(a), Some(b)) => match (&*a, &*b) {
+                        (Value::Number(a), Value::Number(b)) => {
+                            self.stack.push(Rc::new(Value::Boolean(a == b)))
+                        }
+                        (Value::Boolean(a), Value::Boolean(b)) => {
+                            self.stack.push(Rc::new(Value::Boolean(a == b)))
+                        }
+                        (Value::Nil, Value::Nil) => self.stack.push(Rc::new(Value::Boolean(true))),
+                        (Value::Obj(a), Value::Obj(b)) => {
+                            self.stack.push(Rc::new(Value::Boolean(a == b)));
+                        }
+                        _ => {
+                            eprintln!("Error at line {}, Operands must be of the same type", line);
+                            return InterpretResult::RuntimeError;
+                        }
+                    },
                     _ => {
                         eprintln!("Error at line {}, Operands must be of the same type", line);
                         return InterpretResult::RuntimeError;

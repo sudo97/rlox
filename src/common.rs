@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -36,7 +36,7 @@ impl Value {
 #[derive(Debug, PartialEq)]
 pub enum OpCode {
     Return,
-    Constant(Value),
+    Constant(Rc<Value>),
     Not,
     Negate,
     Add,
